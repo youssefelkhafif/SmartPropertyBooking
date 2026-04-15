@@ -1,15 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Calendar</title>
-
-    @vite(['resources/js/app.js', 'resources/css/app.css'])
-</head>
-
-<body class="bg-gray-100 min-h-screen">
+<x-app-layout>
 
     <div class="max-w-6xl mx-auto mt-10 bg-white p-6 rounded-2xl shadow-lg">
 
@@ -69,6 +58,4 @@
         </div>
     </div>
 
-</body>
-
-</html>
+</x-app-layout>
