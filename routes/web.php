@@ -16,10 +16,10 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Breeze Auth Routes (LOGIN / LOGOUT / REGISTER) 🔥
+| Breeze Auth Routes (LOGIN / LOGOUT / REGISTER)
 |--------------------------------------------------------------------------
 */
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -69,12 +69,15 @@ Route::middleware('auth')->group(function () {
 
     /*
     |------------------------------------------
-    | Fake Payment
+    | 💳 STRIPE PAYMENT (ONLY THIS)
     |------------------------------------------
     */
-    Route::get('/payment/{visit}', [VisitController::class, 'paymentPage'])
-        ->name('payment.page');
+    Route::get('/checkout/{visit}', [VisitController::class, 'checkout'])
+        ->name('checkout');
 
-    Route::post('/payment/{visit}', [VisitController::class, 'processPayment'])
-        ->name('payment.process');
+    Route::get('/payment/success/{visit}', [VisitController::class, 'success'])
+        ->name('payment.success');
+
+    Route::get('/payment/cancel/{visit}', [VisitController::class, 'cancel'])
+        ->name('payment.cancel');
 });

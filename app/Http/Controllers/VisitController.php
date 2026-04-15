@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Visit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Stripe\Stripe;
+use Stripe\Checkout\Session;
 
 class VisitController extends Controller
 {
@@ -44,32 +46,54 @@ class VisitController extends Controller
         return response()->json($visit);
     }
 
-    // 💳 SHOW PAYMENT PAGE
-    public function paymentPage(Visit $visit)
+    // 💳 STRIPE CHECKOUT (REPLACES paymentPage)
+    public function checkout(Visit $visit)
     {
         $this->authorizeVisit($visit);
 
-        return view('payment', compact('visit'));
-    }
+        Stripe::setApiKey(config('services.stripe.secret'));
 
-    // 💳 PROCESS FAKE PAYMENT
-    public function processPayment(Request $request, Visit $visit)
-    {
-        $this->authorizeVisit($visit);
+        $session = Session::create([
+            'line_items' => [
+                [
+                    'price_data' => [
+                        'currency' => 'usd',
+                        'product_data' => [
+                            'name' => 'Visit Booking',
+                            'description' => 'Visit on ' . $visit->start_time,
+                        ],
+                        'unit_amount' => 2000, // $20.00
+                    ],
+                    'quantity' => 1
+                ]
+            ],
+            'mode' => 'payment',
 
-        // Fake validation
-        $request->validate([
-            'card_number' => 'required|min:16',
-            'expiry' => 'required',
-            'cvv' => 'required|min:3'
+            'success_url' => route('payment.success', $visit->id),
+            'cancel_url' => route('payment.cancel', $visit->id),
         ]);
 
-        // ✅ Mark as confirmed
+        return redirect($session->url);
+    }
+
+    // ✅ SUCCESS
+    public function success(Visit $visit)
+    {
+        $this->authorizeVisit($visit);
+
         $visit->update([
             'status' => 'confirmed'
         ]);
 
         return redirect('/calendar')->with('success', 'Payment successful!');
+    }
+
+    // ❌ CANCEL
+    public function cancel(Visit $visit)
+    {
+        $this->authorizeVisit($visit);
+
+        return redirect('/calendar')->with('error', 'Payment cancelled.');
     }
 
     // ✏️ UPDATE

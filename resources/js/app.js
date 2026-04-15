@@ -100,7 +100,7 @@ window.closeModal = function() {
 
 // 💳 PAY → GO TO PAYMENT PAGE
 document.getElementById('payBtn')?.addEventListener('click', () => {
-    window.location.href = `/payment/${selectedVisitId}`;
+    window.location.href = `/checkout/${selectedVisitId}`;
 });
 
 
