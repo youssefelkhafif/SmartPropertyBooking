@@ -7,13 +7,18 @@ import interactionPlugin from '@fullcalendar/interaction';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
-
 Alpine.start();
 
 let calendar = null;
 let selectedVisitId = null;
 let selectedStatus = null;
 let currentFilter = 'all';
+
+// 🔥 GET place_id FROM URL
+function getPlaceIdFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('place_id');
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -25,40 +30,45 @@ document.addEventListener('DOMContentLoaded', () => {
         initialView: 'timeGridWeek',
         selectable: true,
 
-        // 📊 EVENTS
-        events(fetchInfo, successCallback) {
-            fetch('/visits')
-                .then(res => res.json())
-                .then(data => {
+        // ✅ SIMPLE + RELIABLE
+        events: '/visits',
 
-                    if (currentFilter !== 'all') {
-                        data = data.filter(v =>
-                            v.title.toLowerCase() === currentFilter
-                        );
-                    }
-
-                    successCallback(data);
-                });
+        eventDataTransform(event) {
+            // 🔥 filter here instead
+            if (currentFilter !== 'all' && event.title.toLowerCase() !== currentFilter) {
+                return null;
+            }
+            return event;
         },
 
-        // ➕ CREATE
+        // ➕ CREATE VISIT
         select(info) {
+
+            const placeId = getPlaceIdFromURL();
+
+            if (!placeId) {
+                alert('❌ No place selected! Click "View" first.');
+                return;
+            }
+
             fetch('/visits', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'X-CSRF-TOKEN': document
+                        .querySelector('meta[name="csrf-token"]').content
                 },
                 body: JSON.stringify({
                     start_time: info.startStr,
                     end_time: info.endStr,
-                    place_id: document.getElementById('place_id')?.value
-
+                    place_id: placeId
                 })
-            }).then(() => calendar.refetchEvents());
+            })
+            .then(() => calendar.refetchEvents())
+            .catch(err => console.error('Create error:', err));
         },
 
-        // 🎯 CLICK
+        // 🎯 CLICK EVENT
         eventClick(info) {
             selectedVisitId = info.event.id;
             selectedStatus = info.event.title.toLowerCase();
@@ -71,18 +81,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// FILTER
+// 🔍 FILTER
 window.filterStatus = function (status) {
     currentFilter = status;
     if (calendar) calendar.refetchEvents();
 };
 
 
-// MODAL
+// 🧱 MODAL
 window.openModal = function () {
+
     const modal = document.getElementById('actionModal');
     const payBtn = document.getElementById('payBtn');
     const text = document.getElementById('modalText');
+
+    if (!modal) return;
 
     modal.classList.remove('hidden');
 
@@ -96,12 +109,13 @@ window.openModal = function () {
 };
 
 window.closeModal = function () {
-    document.getElementById('actionModal').classList.add('hidden');
+    document.getElementById('actionModal')?.classList.add('hidden');
 };
 
 
-// 💳 PAY → GO TO PAYMENT PAGE
+// 💳 PAY
 document.getElementById('payBtn')?.addEventListener('click', () => {
+    if (!selectedVisitId) return;
     window.location.href = `/checkout/${selectedVisitId}`;
 });
 
@@ -109,13 +123,18 @@ document.getElementById('payBtn')?.addEventListener('click', () => {
 // 🗑 DELETE
 document.getElementById('deleteBtn')?.addEventListener('click', () => {
 
+    if (!selectedVisitId) return;
+
     fetch(`/visits/${selectedVisitId}`, {
         method: 'DELETE',
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRF-TOKEN': document
+                .querySelector('meta[name="csrf-token"]').content
         }
-    }).then(() => {
+    })
+    .then(() => {
         closeModal();
         calendar.refetchEvents();
-    });
+    })
+    .catch(err => console.error('Delete error:', err));
 });

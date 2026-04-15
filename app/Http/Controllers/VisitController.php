@@ -7,11 +7,26 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
+use App\Models\Place;
 
 class VisitController extends Controller
 {
-    // 📊 GET VISITS
-    public function index()
+    // 📅 CALENDAR PAGE
+    public function index(Request $request)
+    {
+        $places = Place::latest()->get();
+
+        $selectedPlace = null;
+
+        if ($request->has('place_id')) {
+            $selectedPlace = Place::find($request->place_id);
+        }
+
+        return view('calendar', compact('places', 'selectedPlace'));
+    }
+
+    // 🔥 GET EVENTS FOR FULLCALENDAR (VERY IMPORTANT)
+    public function getVisits()
     {
         $visits = Visit::where('user_id', Auth::id())->get();
 
@@ -22,7 +37,7 @@ class VisitController extends Controller
                     'title' => $visit->status,
                     'start' => $visit->start_time,
                     'end' => $visit->end_time,
-                    'color' => $visit->status === 'confirmed' ? 'green' : 'orange'
+                    'color' => $visit->status === 'confirmed' ? 'green' : 'orange',
                 ];
             })
         );
@@ -32,13 +47,14 @@ class VisitController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'start_time' => 'required|date|after:now',
+            'start_time' => 'required|date',
             'end_time'   => 'required|date|after:start_time',
+            'place_id'   => 'required|exists:places,id',
         ]);
 
         $visit = Visit::create([
             'user_id' => Auth::id(),
-            'place_id' => $request->place_id,
+            'place_id'   => $request->place_id,
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
             'status' => 'pending'
@@ -47,7 +63,7 @@ class VisitController extends Controller
         return response()->json($visit);
     }
 
-    // 💳 STRIPE CHECKOUT (REPLACES paymentPage)
+    // 💳 STRIPE
     public function checkout(Visit $visit)
     {
         $this->authorizeVisit($visit);
@@ -55,20 +71,23 @@ class VisitController extends Controller
         Stripe::setApiKey(config('services.stripe.secret'));
 
         $session = Session::create([
-            'line_items' => [
-                [
-                    'price_data' => [
-                        'currency' => 'usd',
-                        'product_data' => [
-                            'name' => 'Visit Booking',
-                            'description' => 'Visit on ' . $visit->start_time,
-                        ],
-                        'unit_amount' => 2000, // $20.00
+            'line_items' => [[
+                'price_data' => [
+                    'currency' => 'usd',
+                    'product_data' => [
+                        'name' => 'Visit Booking',
+                        'description' => 'Visit on ' . $visit->start_time,
                     ],
-                    'quantity' => 1
-                ]
-            ],
+                    'unit_amount' => 2000,
+                ],
+                'quantity' => 1
+            ]],
             'mode' => 'payment',
+
+            'metadata' => [
+                'visit_id' => $visit->id,
+                'place_id' => $visit->place_id,
+            ],
 
             'success_url' => route('payment.success', $visit->id),
             'cancel_url' => route('payment.cancel', $visit->id),
@@ -95,20 +114,6 @@ class VisitController extends Controller
         $this->authorizeVisit($visit);
 
         return redirect('/calendar')->with('error', 'Payment cancelled.');
-    }
-
-    // ✏️ UPDATE
-    public function update(Request $request, Visit $visit)
-    {
-        $this->authorizeVisit($visit);
-
-        if ($visit->start_time < now()) {
-            abort(403, 'Cannot modify past visits');
-        }
-
-        $visit->update($request->only(['start_time', 'end_time']));
-
-        return response()->json($visit);
     }
 
     // 🗑 DELETE
