@@ -1,43 +1,97 @@
+@php
+   $places = collect([
+    (object)[
+        'id' => 1,
+        'name' => 'Modern Apartment',
+        'description' => 'Beautiful modern apartment with city view.',
+        'location' => 'Casablanca, Morocco',
+        'image' => 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae'
+    ],
+    (object)[
+        'id' => 2,
+        'name' => 'Luxury Villa',
+        'description' => 'Spacious villa with private pool.',
+        'location' => 'Marrakech, Morocco',
+        'image' => 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6'
+    ],
+    (object)[
+        'id' => 3,
+        'name' => 'Office Space',
+        'description' => 'Perfect place for startups.',
+        'location' => 'Rabat, Morocco',
+        'image' => 'https://images.unsplash.com/photo-1497366216548-37526070297c'
+    ],
+    (object)[
+        'id' => 4,
+        'name' => 'Cozy Studio',
+        'description' => 'Small but comfortable studio.',
+        'location' => 'Tangier, Morocco',
+        'image' => 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267'
+    ],
+]); 
+@endphp
+
+
+
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            Dashboard
+        <h2 class="text-2xl font-bold text-gray-800">
+            Explore & Book
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto py-10 px-6">
 
-            <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6">
+        <div class="grid md:grid-cols-2 gap-8">
 
-                <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">
-                    Welcome 👋
-                </h3>
+            @foreach($places as $place)
+                <div class="bg-white rounded-2xl shadow-md flex overflow-hidden hover:shadow-xl transition">
 
-                <p class="mb-6 text-gray-700 dark:text-gray-300">
-                    Manage your property visits easily.
-                </p>
+                    <!-- IMAGE -->
+                    <div class="w-1/2">
+                        <img src="{{ $place->image }}"
+                             class="h-full w-full object-cover">
+                    </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- CONTENT -->
+                    <div class="w-1/2 p-5 flex flex-col justify-between">
 
-                    <!-- 📅 Calendar -->
-                    <a href="{{ route('calendar') }}"
-                       class="block p-6 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition">
-                        📅 Open Calendar
-                        <p class="text-sm mt-2">Book and manage visits</p>
-                    </a>
+                        <div>
+                            <p class="text-sm text-blue-600 font-semibold">
+                                YDooM Places
+                            </p>
 
-                    <!-- 👤 Profile -->
-                    <a href="{{ route('profile.edit') }}"
-                       class="block p-6 bg-gray-500 text-white rounded-lg shadow hover:bg-gray-600 transition">
-                        👤 Profile Settings
-                        <p class="text-sm mt-2">Update your account</p>
-                    </a>
+                            <h3 class="text-xl font-bold text-gray-800 mt-1">
+                                {{ $place->name }}
+                            </h3>
+
+                            <p class="text-sm text-gray-500 mt-2">
+                                {{ $place->description }}
+                            </p>
+
+                            <p class="text-sm text-gray-400 mt-2">
+                                📍 {{ $place->location }}
+                            </p>
+                        </div>
+
+                        <!-- BUTTON -->
+                        <div class="flex justify-between items-center mt-4">
+                            <span class="text-xs bg-gray-100 px-3 py-1 rounded-full">
+                                #Booking
+                            </span>
+
+                            <a href="{{ route('calendar', ['place_id' => $place->id]) }}"
+                               class="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition">
+                                View
+                            </a>
+                        </div>
+
+                    </div>
 
                 </div>
-
-            </div>
+            @endforeach
 
         </div>
+
     </div>
 </x-app-layout>

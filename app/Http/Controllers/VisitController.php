@@ -38,6 +38,7 @@ class VisitController extends Controller
 
         $visit = Visit::create([
             'user_id' => Auth::id(),
+            'place_id' => $request->place_id,
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
             'status' => 'pending'

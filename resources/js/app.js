@@ -51,7 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     start_time: info.startStr,
-                    end_time: info.endStr
+                    end_time: info.endStr,
+                    place_id: document.getElementById('place_id')?.value
+
                 })
             }).then(() => calendar.refetchEvents());
         },
@@ -70,14 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // FILTER
-window.filterStatus = function(status) {
+window.filterStatus = function (status) {
     currentFilter = status;
     if (calendar) calendar.refetchEvents();
 };
 
 
 // MODAL
-window.openModal = function() {
+window.openModal = function () {
     const modal = document.getElementById('actionModal');
     const payBtn = document.getElementById('payBtn');
     const text = document.getElementById('modalText');
@@ -93,7 +95,7 @@ window.openModal = function() {
     }
 };
 
-window.closeModal = function() {
+window.closeModal = function () {
     document.getElementById('actionModal').classList.add('hidden');
 };
 

@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VisitController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Place;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,19 +18,19 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Breeze Auth Routes (LOGIN / LOGOUT / REGISTER)
+| Auth Routes (Breeze)
 |--------------------------------------------------------------------------
 */
 require __DIR__ . '/auth.php';
 
 /*
 |--------------------------------------------------------------------------
-| Dashboard (Protected)
+| Dashboard (SHOW PLACES)
 |--------------------------------------------------------------------------
 */
-
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $places = Place::all();
+    return view('dashboard', compact('places'));
 })->middleware(['auth'])->name('dashboard');
 
 /*
@@ -36,12 +38,11 @@ Route::get('/dashboard', function () {
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
-
 Route::middleware('auth')->group(function () {
 
     /*
     |------------------------------------------
-    | Profile (Breeze)
+    | Profile
     |------------------------------------------
     */
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -50,11 +51,19 @@ Route::middleware('auth')->group(function () {
 
     /*
     |------------------------------------------
-    | Calendar Page
+    | Calendar (RECEIVE PLACE)
     |------------------------------------------
     */
-    Route::get('/calendar', function () {
-        return view('calendar');
+    Route::get('/calendar', function (Request $request) {
+
+        $place = null;
+
+        if ($request->has('place_id')) {
+            $place = Place::find($request->place_id);
+        }
+
+        return view('calendar', compact('place'));
+
     })->name('calendar');
 
     /*
@@ -62,22 +71,20 @@ Route::middleware('auth')->group(function () {
     | Visits API
     |------------------------------------------
     */
-    Route::get('/visits', [VisitController::class, 'index']);
-    Route::post('/visits', [VisitController::class, 'store']);
-    Route::put('/visits/{visit}', [VisitController::class, 'update']);
-    Route::delete('/visits/{visit}', [VisitController::class, 'destroy']);
+    Route::get('/visits', [VisitController::class, 'index'])->name('visits.index');
+    Route::post('/visits', [VisitController::class, 'store'])->name('visits.store');
+    Route::put('/visits/{visit}', [VisitController::class, 'update'])->name('visits.update');
+    Route::delete('/visits/{visit}', [VisitController::class, 'destroy'])->name('visits.destroy');
 
     /*
     |------------------------------------------
-    | 💳 STRIPE PAYMENT (ONLY THIS)
+    | Stripe Payment
     |------------------------------------------
     */
-    Route::get('/checkout/{visit}', [VisitController::class, 'checkout'])
-        ->name('checkout');
+    Route::get('/checkout/{visit}', [VisitController::class, 'checkout'])->name('checkout');
 
-    Route::get('/payment/success/{visit}', [VisitController::class, 'success'])
-        ->name('payment.success');
+    Route::get('/payment/success/{visit}', [VisitController::class, 'success'])->name('payment.success');
 
-    Route::get('/payment/cancel/{visit}', [VisitController::class, 'cancel'])
-        ->name('payment.cancel');
+    Route::get('/payment/cancel/{visit}', [VisitController::class, 'cancel'])->name('payment.cancel');
+
 });
